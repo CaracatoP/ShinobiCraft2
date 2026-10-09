@@ -509,8 +509,14 @@ class ProcessBuilder {
                         case 'auth_access_token':
                             val = this.authUser.accessToken
                             break
+                        case 'auth_xuid':
+                            val = this.authUser.xuid || ''
+                            break
+                        case 'clientid':
+                            val = require('./ipcconstants').AZURE_CLIENT_ID
+                            break
                         case 'user_type':
-                            val = this.authUser.type === 'microsoft' ? 'msa' : 'mojang'
+                            val = this.authUser.type === 'offline' ? 'legacy' : (this.authUser.type === 'microsoft' ? 'msa' : 'mojang')
                             break
                         case 'version_type':
                             val = this.vanillaManifest.type
@@ -553,6 +559,19 @@ class ProcessBuilder {
             return arg != null
         })
 
+        return this._normalizeAuthArgs(args)
+    }
+
+    // Keep optional account arguments consistent with the selected profile.
+    _normalizeAuthArgs(args) {
+        for(let i = 0; i < args.length; i++) {
+            if(args[i] === '--xuid' && !this.authUser.xuid) {
+                args.splice(i, 2)
+                i--
+            } else if(args[i] === '--userType' && this.authUser.type === 'offline') {
+                args[i + 1] = 'legacy'
+            }
+        }
         return args
     }
 
@@ -593,8 +612,14 @@ class ProcessBuilder {
                     case 'auth_access_token':
                         val = this.authUser.accessToken
                         break
+                    case 'auth_xuid':
+                        val = this.authUser.xuid || ''
+                        break
+                    case 'clientid':
+                        val = require('./ipcconstants').AZURE_CLIENT_ID
+                        break
                     case 'user_type':
-                        val = this.authUser.type === 'microsoft' ? 'msa' : 'mojang'
+                        val = this.authUser.type === 'offline' ? 'legacy' : (this.authUser.type === 'microsoft' ? 'msa' : 'mojang')
                         break
                     case 'user_properties': // 1.8.9 and below.
                         val = '{}'
@@ -642,7 +667,7 @@ class ProcessBuilder {
             mcArgs.unshift('--tweakClass')
         }
 
-        return mcArgs
+        return this._normalizeAuthArgs(mcArgs)
     }
 
     /**

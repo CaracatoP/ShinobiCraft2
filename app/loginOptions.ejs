@@ -25,6 +25,13 @@
                     </button>
                 </div>
             </div>
+            <form id="offlineLoginForm" novalidate>
+                <label for="offlineNick"><%- lang('loginOptions.offlineNickLabel') %></label>
+                <input id="offlineNick" name="offlineNick" type="text" minlength="3" maxlength="16" autocomplete="off" spellcheck="false" aria-describedby="offlineNickHelp offlineLoginError">
+                <span id="offlineNickHelp"><%- lang('loginOptions.offlineNickHelp') %></span>
+                <span id="offlineLoginError" role="alert"></span>
+                <button id="loginOptionOffline" class="loginOptionButton" type="submit"><%- lang('loginOptions.playOffline') %></button>
+            </form>
             <div id="loginOptionCancelContainer" style="display: none;">
                 <button id="loginOptionCancelButton"><%- lang('loginOptions.cancelButton') %></button>
             </div>

@@ -646,7 +646,7 @@ function populateAuthAccounts(){
                 <div class="settingsAuthAccountDetails">
                     <div class="settingsAuthAccountDetailPane">
                         <div class="settingsAuthAccountDetailTitle">${Lang.queryJS('settings.authAccountPopulate.username')}</div>
-                        <div class="settingsAuthAccountDetailValue">${acc.displayName}</div>
+                        <div class="settingsAuthAccountDetailValue">${acc.displayName}${acc.type === 'offline' ? ' (Offline)' : ''}</div>
                     </div>
                     <div class="settingsAuthAccountDetailPane">
                         <div class="settingsAuthAccountDetailTitle">${Lang.queryJS('settings.authAccountPopulate.uuid')}</div>

@@ -370,6 +370,23 @@ exports.updateMicrosoftAuthAccount = function(uuid, accessToken, msAccessToken, 
     return config.authenticationDatabase[uuid]
 }
 
+/** Store and select a local profile without Microsoft or Mojang credentials. */
+exports.addOfflineAuthAccount = function(uuid, accessToken, name) {
+    config.selectedAccount = uuid
+    config.authenticationDatabase[uuid] = {
+        type: 'offline',
+        accessToken,
+        username: name,
+        uuid,
+        displayName: name,
+        name,
+        userType: 'legacy',
+        meta: { type: 'offline', demo: false },
+        xuid: null
+    }
+    return config.authenticationDatabase[uuid]
+}
+
 /**
  * Adds an authenticated microsoft account to the database to be stored.
  * 

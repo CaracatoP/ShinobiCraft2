@@ -16,6 +16,7 @@ const { MojangRestAPI, MojangErrorCode } = require('helios-core/mojang')
 const { MicrosoftAuth, MicrosoftErrorCode } = require('helios-core/microsoft')
 const { AZURE_CLIENT_ID }    = require('./ipcconstants')
 const Lang = require('./langloader')
+const crypto = require('crypto')
 
 const log = LoggerUtil.getLogger('AuthManager')
 
@@ -167,6 +168,26 @@ exports.addMojangAccount = async function(username, password) {
     }
 }
 
+function offlineUUID(name) {
+    const hash = crypto.createHash('md5').update('OfflinePlayer:' + name, 'utf8').digest()
+    hash[6] = (hash[6] & 0x0f) | 0x30
+    hash[8] = (hash[8] & 0x3f) | 0x80
+    const hex = hash.toString('hex')
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+}
+
+exports.createOfflineUser = async function(username) {
+    const name = typeof username === 'string' ? username.trim() : ''
+    if(!/^[A-Za-z0-9_]{3,16}$/.test(name)) {
+        throw new Error('Invalid offline username')
+    }
+    const user = ConfigManager.addOfflineAuthAccount(
+        offlineUUID(name), crypto.randomUUID().replace(/-/g, ''), name
+    )
+    ConfigManager.save()
+    return user
+}
+
 const AUTH_MODE = { FULL: 0, MS_REFRESH: 1, MC_REFRESH: 2 }
 
 /**
@@ -276,6 +297,11 @@ exports.addMicrosoftAccount = async function(authCode) {
 exports.removeMojangAccount = async function(uuid){
     try {
         const authAcc = ConfigManager.getAuthAccount(uuid)
+        if(authAcc?.type === 'offline') {
+            ConfigManager.removeAuthAccount(uuid)
+            ConfigManager.save()
+            return
+        }
         const response = await MojangRestAPI.invalidate(authAcc.accessToken, ConfigManager.getClientToken())
         if(response.responseStatus === RestResponseStatus.SUCCESS) {
             ConfigManager.removeAuthAccount(uuid)
@@ -415,6 +441,9 @@ async function validateSelectedMicrosoftAccount(){
  */
 exports.validateSelected = async function(){
     const current = ConfigManager.getSelectedAccount()
+
+    if(current == null) return false
+    if(current.type === 'offline') return true
 
     if(current.type === 'microsoft') {
         return await validateSelectedMicrosoftAccount()

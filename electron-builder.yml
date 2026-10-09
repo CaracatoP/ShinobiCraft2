@@ -1,5 +1,5 @@
-appId: 'helioslauncher'
-productName: 'Helios Launcher'
+appId: 'shinobicraft2'
+productName: 'ShinobiCraft2 Launcher'
 artifactName: '${productName}-setup-${version}.${ext}'
 
 copyright: 'Copyright © 2018-2026 Daniel Scalzi'
@@ -15,6 +15,7 @@ extraResources:
 
 # Windows Configuration
 win: 
+  icon: 'build/icon.ico'
   target: 
     - target: 'nsis'
       arch: 'x64'
@@ -49,3 +50,8 @@ linux:
 directories:
   buildResources: 'build'
   output: 'dist'
+
+publish:
+  provider: github
+  owner: CaracatoP
+  repo: ShinobiCraft2

@@ -3914,42 +3914,68 @@ input:checked + .toggleSwitchSlider:before {
 #loadingContainer {
     position: absolute;
     z-index: 400;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+
+    top: 22px;
+    left: 0;
+
     width: 100%;
     height: calc(100% - 22px);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    background:
+        linear-gradient(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.35)),
+        url('../images/LoadingBG.png');
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
-/* Loading content container. */
 #loadingContent {
     position: relative;
+
+    width: 100%;
+    height: 100%;
+
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
+
+    z-index: 1;
 }
 
-/* Spinner container. */
 #loadSpinnerContainer {
     position: relative;
+
+    width: 100%;
+    height: 100%;
+
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* Stationary image for the spinner. */
+/* Não usamos mais isso como background */
 #loadCenterImage {
-    position: absolute;
-    width: 277px;
-    height: auto;
+    display: none;
 }
 
-/* Rotating image for the spinner. */
 #loadSpinnerImage {
-    width: 280px;
+    position: relative;
+
+    width: 560px;
+    max-width: 70%;
+
     height: auto;
-    z-index: 400;
+
+    z-index: 2;
+
+    filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.8));
 }
 
 /* Rotating animation for the spinner. */
@@ -3965,4 +3991,46 @@ input:checked + .toggleSwitchSlider:before {
 /* Class which is applied when the spinner image is spinning. */
 .rotating {
     animation: rotating 10s linear infinite;
+}
+/* Offline login extends the existing login option controls. */
+#offlineLoginForm {
+    display: flex;
+    flex-direction: column;
+    width: 16em;
+    max-width: calc(100vw - 40px);
+    gap: 8px;
+    margin-top: 20px;
+}
+#offlineNick {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 10px;
+    color: white;
+    background: rgba(0, 0, 0, 0.50);
+    border: 1px solid rgba(126, 126, 126, 0.57);
+    border-radius: 3px;
+    font: inherit;
+}
+#offlineNick:focus-visible,
+#loginOptionOffline:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 2px;
+}
+#offlineNickHelp,
+#offlineLoginError {
+    font-size: 12px;
+    line-height: 1.5;
+}
+#offlineLoginError {
+    min-height: 36px;
+    color: #ffb7b7;
+}
+#loginOptionOffline:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+@media (prefers-reduced-motion: reduce) {
+    #loginOptionOffline {
+        transition: none;
+    }
 }

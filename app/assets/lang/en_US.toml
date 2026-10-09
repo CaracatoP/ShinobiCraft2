@@ -9,7 +9,7 @@ mojangStatus = "MOJANG STATUS"
 mojangStatusTooltipTitle = "Services"
 mojangStatusNETitle = "Non&nbsp;Essential"
 newsButton = "NEWS"
-launchButton = "PLAY"
+launchButton = "JOGAR"
 launchButtonPlaceholder = "&#8226; No Server Selected"
 launchDetails = "Please wait.."
 newsNavigationStatus = "{currentPage} of {totalPages}"
@@ -35,6 +35,9 @@ loginPasswordDisclaimer1 = "Your password is sent directly to mojang and never s
 loginPasswordDisclaimer2 = "{appName} is not affiliated with Mojang AB."
 
 [ejs.loginOptions]
+offlineNickLabel = "Offline username"
+offlineNickHelp = "3–16 letters, numbers or underscores."
+playOffline = "Play offline"
 loginOptionsTitle = "Login Options"
 loginWithMicrosoft = "Login with Microsoft"
 loginWithMojang = "Login with Mojang"
@@ -342,3 +345,9 @@ gameNotPurchasedTitle = "Error During Login:<br>Game Not Purchased"
 gameNotPurchasedDesc = "The account you are trying to login with has not purchased a copy of Minecraft. You may purchase a copy on <a href=\"https://minecraft.net/\">Minecraft.net</a>"
 unknownErrorTitle = "Unknown Error During Login"
 unknownErrorDesc = "An unknown error has occurred. Please see the console for details."
+
+[js.loginOptions]
+offlineInvalidNick = "Use 3–16 letters, numbers or underscores."
+offlineLoggingIn = "Signing in…"
+offlineLoginFailed = "Could not save the profile. Try again."
+playOffline = "Play offline"
