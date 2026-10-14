@@ -4,8 +4,7 @@ remoteMain.initialize()
 // Requirements
 const { app, BrowserWindow, ipcMain, Menu, shell } = require('electron')
 const autoUpdater                       = require('electron-updater').autoUpdater
-autoUpdater.autoDownload = true
-autoUpdater.disableDifferentialDownload = true
+const { createUpdaterController }       = require('./app/assets/js/updatercontroller')
 const ejse                              = require('ejs-electron')
 const fs                                = require('fs')
 const isDev                             = require('./app/assets/js/isdev')
@@ -18,75 +17,59 @@ const LangLoader                        = require('./app/assets/js/langloader')
 // Setup Lang
 LangLoader.setupLanguage()
 
-// Setup auto updater.
-function initAutoUpdater(event, data) {
-
-    if (data) {
-        autoUpdater.allowPrerelease = true
+// Keep a current renderer target rather than capturing the first IPC event forever.
+let updaterRenderer = null
+let updaterLogPath = null
+function writeUpdaterLog(level, message){
+    console[level](message)
+    try {
+        if(!updaterLogPath){
+            updaterLogPath = path.join(app.getPath('userData'), 'logs', 'updater.log')
+            fs.mkdirSync(path.dirname(updaterLogPath), { recursive: true })
+        }
+        fs.appendFile(updaterLogPath, `${new Date().toISOString()} ${message}\n`, error => {
+            if(error){
+                console.error('[Updater] could not write log:', error.message)
+            }
+        })
+    } catch(error){
+        console.error('[Updater] could not open log:', error.message)
     }
+}
+const updaterLogger = Object.fromEntries(['info', 'warn', 'error', 'debug'].map(level => [level, message => writeUpdaterLog(level, String(message))]))
+const updaterController = createUpdaterController({
+    autoUpdater,
+    logger: updaterLogger,
+    notify: (event, info) => {
+        if(process.platform === 'darwin' && info?.version){
+            // Use the project's release page for DMG builds, not a guessed asset URL.
+            info = { ...info, manualDownloadUrl: new URL(`releases/tag/${info.tag || `v${info.version}`}`, `${require('./package.json').homepage}/`).href }
+        }
+        if(updaterRenderer && !updaterRenderer.isDestroyed()){
+            updaterRenderer.send('autoUpdateNotification', event, info)
+        }
+    }
+})
 
-    if (isDev) {
-        autoUpdater.autoInstallOnAppQuit = false
+function initAutoUpdater(event, data){
+    updaterRenderer = event.sender
+    autoUpdater.allowPrerelease = Boolean(data) || semver.prerelease(app.getVersion()) != null
+    if(isDev){
         autoUpdater.updateConfigPath = path.join(__dirname, 'dev-app-update.yml')
     }
-
-    if (process.platform === 'darwin') {
-        autoUpdater.autoDownload = false
-    }
-
-    autoUpdater.on('download-progress', (progress) => {
-        console.log(
-            `Download: ${progress.percent.toFixed(1)}% ` +
-            `(${(progress.transferred / 1024 / 1024).toFixed(1)} MB / ` +
-            `${(progress.total / 1024 / 1024).toFixed(1)} MB)`
-        )
-
-        event.sender.send(
-            'autoUpdateNotification',
-            'download-progress',
-            progress
-        )
-    })
-
-    autoUpdater.on('update-available', (info) => {
-        event.sender.send('autoUpdateNotification', 'update-available', info)
-    })
-
-    autoUpdater.on('update-downloaded', (info) => {
-        event.sender.send('autoUpdateNotification', 'update-downloaded', info)
-    })
-
-    autoUpdater.on('update-not-available', (info) => {
-        event.sender.send('autoUpdateNotification', 'update-not-available', info)
-    })
-
-    autoUpdater.on('checking-for-update', () => {
-        event.sender.send('autoUpdateNotification', 'checking-for-update')
-    })
-
-    autoUpdater.on('error', (err) => {
-        console.error('AUTO UPDATE ERROR:', err)
-
-        event.sender.send('autoUpdateNotification', 'realerror', {
-            message: err.message,
-            stack: err.stack
-        })
-    })
+    updaterController.initialize()
+    event.sender.send('autoUpdateNotification', 'ready')
+    updaterController.replay()
 }
 
 // Open channel to listen for update actions.
 ipcMain.on('autoUpdateAction', (event, arg, data) => {
     switch(arg){
         case 'initAutoUpdater':
-            console.log('Initializing auto updater.')
             initAutoUpdater(event, data)
-            event.sender.send('autoUpdateNotification', 'ready')
             break
         case 'checkForUpdate':
-            autoUpdater.checkForUpdates()
-                .catch(err => {
-                    event.sender.send('autoUpdateNotification', 'realerror', err)
-                })
+            updaterController.check()
             break
         case 'allowPrereleaseChange':
             if(!data){
@@ -101,7 +84,7 @@ ipcMain.on('autoUpdateAction', (event, arg, data) => {
             }
             break
         case 'installUpdateNow':
-            autoUpdater.quitAndInstall()
+            updaterController.install()
             break
         default:
             console.log('Unknown argument', arg)

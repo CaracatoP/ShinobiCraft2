@@ -1,6 +1,6 @@
 {
   "name": "shinobicraft2-launcher",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "productName": "ShinobiCraft2 Launcher",
   "description": "Launcher oficial do servidor ShinobiCraft2",
   "author": "CaracatoP",
@@ -17,7 +17,9 @@
     "dist:win": "npm run dist -- -w",
     "dist:mac": "npm run dist -- -m",
     "dist:linux": "npm run dist -- -l",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:updater": "node --test tests/updater.test.js tests/updater-renderer.test.js",
+    "release:validate": "node scripts/validate-update-release.js"
   },
   "engines": {
     "node": "22.x.x"

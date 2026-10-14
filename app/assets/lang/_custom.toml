@@ -2,6 +2,8 @@
 
 [ejs.app]
 title = "ShinobiCraft2 Launcher"
+viewUpdateButton = "Ver atualização"
+continueButton = "Continuar"
 
 [ejs.landing]
 mediaGitHubURL = "https://github.com/dscalzi/HeliosLauncher"
@@ -14,6 +16,47 @@ mediaDiscordURL = "https://discord.gg/gY2XXKUaUB"
 mojangAccount = "Mojang / offline"
 sourceGithubLink = "https://github.com/dscalZi/HeliosLauncher"
 supportLink = "https://github.com/dscalZi/HeliosLauncher/issues"
+navUpdates = "Atualizações"
+launcherUpdatesHeaderText = "Atualizações do launcher"
+launcherUpdatesHeaderDesc = "Acompanhe o download e instale quando quiser."
+checkForUpdates = "Verificar atualizações"
+whatsNew = "Novidades"
+updateReleaseNotes = "Notas da atualização"
+noReleaseNotes = "Sem notas da versão"
+updateVersionText = "Versão"
+
+[js.settings.updates]
+preReleaseTitle = "Pré-versão"
+stableReleaseTitle = "Versão estável"
+newReleaseTitle = "Nova atualização disponível"
+newPreReleaseTitle = "Nova pré-versão disponível"
+downloadingButton = "Baixando..."
+downloadingProgressButton = "Baixando... {percent}%"
+preparingDownloadButton = "Preparando download..."
+downloadButton = "Baixar pelo GitHub"
+latestVersionTitle = "Você está usando a versão mais recente"
+checkForUpdatesButton = "Verificar atualizações"
+checkingForUpdatesButton = "Verificando atualizações..."
+retryingMessage = "Verificando novamente. Você pode continuar usando o launcher."
+readyTitle = "Atualização pronta"
+failedTitle = "Falha ao atualizar"
+retryButton = "Tentar novamente"
+backgroundDownloadMessage = "O download começa automaticamente em segundo plano."
+manualDownloadMessage = "Abra a release, baixe o DMG e feche o launcher para instalar."
+downloadCompleteMessage = "Download concluído. Instale quando quiser."
+failedMessage = "Verifique sua conexão e tente novamente."
+installingButton = "Instalando..."
+installingMessage = "O launcher será fechado para instalar a atualização."
+
+[js.uicore.autoUpdate]
+checkingForUpdateButton = "Verificando atualizações..."
+installNowButton = "Instalar agora"
+checkForUpdatesButton = "Verificar atualizações"
+viewUpdateButton = "Ver atualização"
+availableMessage = "ShinobiCraft2 Launcher v{version} está disponível. O download começa automaticamente em segundo plano."
+manualAvailableMessage = "ShinobiCraft2 Launcher v{version} está disponível. Abra a atualização para baixar o instalador do macOS."
+readyMessage = "ShinobiCraft2 Launcher v{version} está pronta para instalar."
+failedMessage = "Não foi possível concluir a atualização. Você pode continuar usando o launcher e tentar novamente."
 
 [ejs.welcome]
 welcomeHeader = "BEM-VINDO AO SHINOBICRAFT2"

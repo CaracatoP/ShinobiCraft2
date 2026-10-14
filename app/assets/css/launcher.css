@@ -2439,6 +2439,82 @@ input:checked + .toggleSwitchSlider:before {
     pointer-events: none;
 }
 
+/* Updater feedback uses the existing compact settings typography and surface. */
+#settingsUpdateDetail {
+    min-height: 18px;
+    margin: 5px 10px 0;
+    font-size: 12px;
+    font-weight: normal;
+}
+#settingsTabUpdate[data-update-state="error"] #settingsUpdateTitle,
+#settingsTabUpdate[data-update-state="error"] #settingsUpdateDetail {
+    color: #ffb7b7;
+}
+#settingsUpdateActionButton:focus-visible,
+#updaterNotice button:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 3px;
+}
+#updaterNotice {
+    position: fixed;
+    top: 40px;
+    right: 20px;
+    width: 340px;
+    max-width: calc(100vw - 64px);
+    padding: 15px;
+    z-index: 150;
+    background: rgba(0, 0, 0, 0.92);
+    border: 1px solid rgba(126, 126, 126, 0.57);
+    border-radius: 3px;
+    color: white;
+    font-size: 12px;
+    line-height: 1.5;
+}
+#updaterNotice[hidden] {
+    display: none;
+}
+#updaterNoticeTitle {
+    font-family: 'Avenir Medium';
+    font-size: 14px;
+}
+#updaterNotice p {
+    margin: 8px 0;
+}
+#updaterNoticeDetail {
+    min-height: 18px;
+}
+#updaterNoticeActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 10px;
+}
+#updaterNotice button {
+    border: none;
+    padding: 4px 0;
+    background: none;
+    color: white;
+    font-family: 'Avenir Medium';
+    font-size: 12px;
+    cursor: pointer;
+}
+#updaterNotice button:hover {
+    text-decoration: underline;
+}
+#updaterNotice button:active {
+    color: #c7c7c7;
+}
+#updaterNotice button:disabled {
+    opacity: 0.6;
+    cursor: default;
+    text-decoration: none;
+}
+@media (prefers-reduced-motion: reduce) {
+    #settingsUpdateActionButton {
+        transition: none;
+    }
+}
+
 /*******************************************************************************
  *                                                                             *
  * Landing View (Structural Styles)                                            *

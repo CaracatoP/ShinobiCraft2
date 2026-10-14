@@ -37,6 +37,17 @@
         <%- include('landing') %>
     </div>
     <%- include('overlay') %>
+    <section id="updaterNotice" aria-labelledby="updaterNoticeTitle" hidden>
+        <div role="status" aria-live="polite" aria-atomic="true">
+            <strong id="updaterNoticeTitle"></strong>
+            <p id="updaterNoticeMessage"></p>
+        </div>
+        <p id="updaterNoticeDetail"></p>
+        <div id="updaterNoticeActions">
+            <button id="updaterNoticeAction" type="button"><%- lang('app.viewUpdateButton') %></button>
+            <button id="updaterNoticeDismiss" type="button"><%- lang('app.continueButton') %></button>
+        </div>
+    </section>
     <div id="loadingContainer">
         <div id="loadingContent">
             <div id="loadSpinnerContainer">

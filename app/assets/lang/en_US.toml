@@ -1,3 +1,7 @@
+[ejs.app]
+viewUpdateButton = "View update"
+continueButton = "Continue"
+
 [ejs.landing]
 updateAvailableTooltip = "Update Available"
 usernamePlaceholder = "Username"
@@ -125,6 +129,7 @@ launcherUpdatesHeaderDesc = "Download, install, and review updates for the launc
 checkForUpdates = "Check for Updates"
 whatsNew = "What's New"
 updateReleaseNotes = "Update Release Notes"
+updateVersionText = "Version"
 
 [ejs.waiting]
 waitingText = "Waiting for Microsoft.."
@@ -274,13 +279,27 @@ stableReleaseTitle = "Stable Release"
 releaseNotesFailed = "Failed to load release notes."
 
 [js.settings.updates]
-newReleaseTitle = "New Release Available"
-newPreReleaseTitle = "New Pre-release Available"
-downloadingButton = "Downloading.."
-downloadButton = 'Download from GitHub<span style="font-size: 10px;color: gray;text-shadow: none !important;">Close the launcher and run the dmg to update.</span>'
+preReleaseTitle = "Pre-release"
+stableReleaseTitle = "Stable Release"
+newReleaseTitle = "New update available"
+newPreReleaseTitle = "New pre-release available"
+downloadingButton = "Downloading..."
+downloadingProgressButton = "Downloading... {percent}%"
+preparingDownloadButton = "Preparing download..."
+downloadButton = "Download from GitHub"
 latestVersionTitle = "You Are Running the Latest Version"
 checkForUpdatesButton = "Check for Updates"
 checkingForUpdatesButton = "Checking for Updates.."
+retryingMessage = "Checking for updates again. You can keep using the launcher."
+readyTitle = "Update ready"
+failedTitle = "Update failed"
+retryButton = "Try again"
+backgroundDownloadMessage = "The update downloads automatically in the background."
+manualDownloadMessage = "Open the release, download the DMG, then close the launcher to install."
+downloadCompleteMessage = "Download complete. Install when you are ready."
+failedMessage = "Check your connection and try again."
+installingButton = "Installing..."
+installingMessage = "The launcher will close to install the update."
 
 [js.settings.msftLogin]
 errorTitle = "Microsoft Login Failed"
@@ -301,8 +320,13 @@ selectAnotherAccountButton = "Select Another Account"
 
 [js.uicore.autoUpdate]
 checkingForUpdateButton = "Checking for Updates..."
-installNowButton = "Install Now"
+installNowButton = "Install now"
 checkForUpdatesButton = "Check for Updates"
+viewUpdateButton = "View update"
+availableMessage = "ShinobiCraft2 Launcher v{version} is available. The download starts automatically in the background."
+manualAvailableMessage = "ShinobiCraft2 Launcher v{version} is available. Open the update to download the macOS installer."
+readyMessage = "ShinobiCraft2 Launcher v{version} is ready to install."
+failedMessage = "The update could not be completed. You can keep using the launcher and try again."
 
 [js.auth.microsoft.error]
 noProfileTitle = "Error During Login:<br>Profile Not Set Up"

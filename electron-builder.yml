@@ -1,6 +1,6 @@
 appId: 'shinobicraft2'
 productName: 'ShinobiCraft2 Launcher'
-artifactName: '${productName}-setup-${version}.${ext}'
+artifactName: 'ShinobiCraft2.Launcher-setup-${version}.${ext}'
 
 copyright: 'Copyright © 2018-2026 Daniel Scalzi'
 
@@ -8,7 +8,7 @@ asar: true
 compression: 'maximum'
 
 files:
-  - '!{dist,.gitignore,.vscode,docs,dev-app-update.yml,.nvmrc,eslint.config.mjs}'
+  - '!{dist,.gitignore,.vscode,docs,tests,scripts,dev-app-update.yml,.nvmrc,eslint.config.mjs,DESIGN.md,premium-audit.json}'
 
 extraResources:
   - 'libraries'

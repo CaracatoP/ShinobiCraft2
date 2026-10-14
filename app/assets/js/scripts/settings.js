@@ -1427,14 +1427,14 @@ function isPrerelease(version){
  * @param {Element} titleElement The title element.
  * @param {Element} checkElement The check mark element.
  */
-function populateVersionInformation(version, valueElement, titleElement, checkElement){
+function populateVersionInformation(version, valueElement, titleElement, checkElement, labels = 'settings.about'){
     valueElement.innerHTML = version
     if(isPrerelease(version)){
-        titleElement.innerHTML = Lang.queryJS('settings.about.preReleaseTitle')
+        titleElement.innerHTML = Lang.queryJS(`${labels}.preReleaseTitle`)
         titleElement.style.color = '#ff886d'
         checkElement.style.background = '#ff886d'
     } else {
-        titleElement.innerHTML = Lang.queryJS('settings.about.stableReleaseTitle')
+        titleElement.innerHTML = Lang.queryJS(`${labels}.stableReleaseTitle`)
         titleElement.style.color = null
         checkElement.style.background = null
     }
@@ -1453,7 +1453,7 @@ function populateAboutVersionInformation(){
  */
 function populateReleaseNotes(){
     $.ajax({
-        url: 'https://github.com/dscalzi/HeliosLauncher/releases.atom',
+        url: 'https://github.com/CaracatoP/ShinobiCraft2/releases.atom',
         success: (data) => {
             const version = 'v' + remote.app.getVersion()
             const entries = $(data).find('entry')
@@ -1498,6 +1498,8 @@ const settingsUpdateChangelogTitle = settingsTabUpdate.getElementsByClassName('s
 const settingsUpdateChangelogText  = settingsTabUpdate.getElementsByClassName('settingsChangelogText')[0]
 const settingsUpdateChangelogCont  = settingsTabUpdate.getElementsByClassName('settingsChangelogContainer')[0]
 const settingsUpdateActionButton   = document.getElementById('settingsUpdateActionButton')
+const settingsUpdateDetail         = document.getElementById('settingsUpdateDetail')
+let renderedSettingsUpdateNotes
 
 /**
  * Update the properties of the update action button.
@@ -1507,10 +1509,128 @@ const settingsUpdateActionButton   = document.getElementById('settingsUpdateActi
  * @param {function} handler Optional. New button event handler.
  */
 function settingsUpdateButtonStatus(text, disabled = false, handler = null){
-    settingsUpdateActionButton.innerHTML = text
+    // Always clear the previous action, including while a download is pending.
+    settingsUpdateActionButton.onclick = null
+    settingsUpdateActionButton.textContent = text
     settingsUpdateActionButton.disabled = disabled
-    if(handler != null){
+    if(!disabled && handler != null){
         settingsUpdateActionButton.onclick = handler
+    }
+}
+
+function settingsUpdateProgressPercent(){
+    const progress = launcherUpdateState.progress
+    if(progress && Number.isFinite(progress.percent)){
+        return Math.max(0, Math.min(100, progress.percent)).toFixed(1)
+    }
+    return null
+}
+
+function settingsUpdateStatusText(){
+    const state = launcherUpdateState
+    if(state.status === 'error'){
+        return Lang.queryJS('settings.updates.failedMessage')
+    }
+    if(state.status === 'checking'){
+        return Lang.queryJS('settings.updates.checkingForUpdatesButton')
+    }
+    if(state.status === 'installing'){
+        return Lang.queryJS('settings.updates.installingMessage')
+    }
+    if(state.status === 'downloaded'){
+        return Lang.queryJS('settings.updates.downloadCompleteMessage')
+    }
+    const progress = state.progress
+    if(state.status === 'downloading' && progress && Number.isFinite(progress.transferred) && Number.isFinite(progress.total) && progress.total > 0){
+        const downloaded = (Math.max(0, progress.transferred) / 1048576).toFixed(1)
+        const total = (progress.total / 1048576).toFixed(1)
+        return `${downloaded} MB / ${total} MB`
+    }
+    if(state.status === 'available' || state.status === 'downloading'){
+        return Lang.queryJS(state.info && state.info.manualDownloadUrl ? 'settings.updates.manualDownloadMessage' : 'settings.updates.backgroundDownloadMessage')
+    }
+    return ''
+}
+
+function renderSettingsUpdateState(){
+    const state = launcherUpdateState
+    const data = state.info
+    const version = data && data.version ? data.version : remote.app.getVersion()
+    const hasUpdate = data && state.status !== 'latest' && state.status !== 'idle'
+    let title = state.status === 'latest' ? 'latestVersionTitle' : 'checkForUpdatesButton'
+    if(state.status === 'checking'){
+        title = 'checkingForUpdatesButton'
+    } else if(state.status === 'error'){
+        title = 'failedTitle'
+    } else if(state.status === 'downloaded' || state.status === 'installing'){
+        title = 'readyTitle'
+    } else if(hasUpdate){
+        title = isPrerelease(version) ? 'newPreReleaseTitle' : 'newReleaseTitle'
+    }
+    const titleText = Lang.queryJS(`settings.updates.${title}`)
+    if(settingsUpdateTitle.textContent !== titleText){
+        settingsUpdateTitle.textContent = titleText
+    }
+    settingsTabUpdate.setAttribute('data-update-state', state.status)
+    if(settingsUpdateVersionValue.textContent !== version){
+        populateVersionInformation(version, settingsUpdateVersionValue, settingsUpdateVersionTitle, settingsUpdateVersionCheck, 'settings.updates')
+    }
+    settingsUpdateDetail.textContent = settingsUpdateStatusText()
+    const percent = settingsUpdateProgressPercent()
+    const measuredProgress = state.status === 'downloading' && percent != null
+    settingsUpdateDetail.setAttribute('role', measuredProgress ? 'progressbar' : 'status')
+    settingsUpdateDetail.setAttribute('aria-live', measuredProgress ? 'off' : 'polite')
+    if(measuredProgress){
+        settingsUpdateDetail.setAttribute('aria-valuemin', '0')
+        settingsUpdateDetail.setAttribute('aria-valuemax', '100')
+        settingsUpdateDetail.setAttribute('aria-valuenow', percent)
+        settingsUpdateDetail.setAttribute('aria-valuetext', `${percent}% · ${settingsUpdateStatusText()}`)
+        settingsUpdateDetail.setAttribute('aria-label', Lang.queryJS('settings.updates.downloadingButton'))
+    } else {
+        for(const attribute of ['aria-valuemin', 'aria-valuemax', 'aria-valuenow', 'aria-valuetext', 'aria-label']){
+            settingsUpdateDetail.removeAttribute(attribute)
+        }
+    }
+    settingsUpdateChangelogCont.style.display = hasUpdate ? '' : 'none'
+    if(hasUpdate){
+        const releaseTitle = data.releaseName || `v${version}`
+        if(settingsUpdateChangelogTitle.textContent !== releaseTitle){
+            settingsUpdateChangelogTitle.textContent = releaseTitle
+        }
+        const notes = Array.isArray(data.releaseNotes) ? data.releaseNotes.map(note => note.note || '').join('<br>') : data.releaseNotes
+        const releaseNotes = notes || Lang.queryEJS('settings.noReleaseNotes')
+        if(renderedSettingsUpdateNotes !== releaseNotes){
+            settingsUpdateChangelogText.innerHTML = releaseNotes
+            renderedSettingsUpdateNotes = releaseNotes
+        }
+    }
+    switch(state.status){
+        case 'checking':
+            settingsUpdateButtonStatus(Lang.queryJS('settings.updates.checkingForUpdatesButton'), true)
+            break
+        case 'available':
+            if(data && data.manualDownloadUrl){
+                settingsUpdateButtonStatus(Lang.queryJS('settings.updates.downloadButton'), false, () => shell.openExternal(data.manualDownloadUrl))
+            } else {
+                settingsUpdateButtonStatus(Lang.queryJS('settings.updates.preparingDownloadButton'), true)
+            }
+            break
+        case 'downloading': {
+            const text = percent == null ? Lang.queryJS('settings.updates.downloadingButton') : Lang.queryJS('settings.updates.downloadingProgressButton', {percent})
+            settingsUpdateButtonStatus(text, true)
+            break
+        }
+        case 'downloaded':
+            settingsUpdateButtonStatus(Lang.queryJS('uicore.autoUpdate.installNowButton'), false, installLauncherUpdate)
+            break
+        case 'installing':
+            settingsUpdateButtonStatus(Lang.queryJS('settings.updates.installingButton'), true)
+            break
+        case 'error':
+            settingsUpdateButtonStatus(Lang.queryJS('settings.updates.retryButton'), false, requestLauncherUpdateCheck)
+            break
+        default:
+            settingsUpdateButtonStatus(Lang.queryJS('settings.updates.checkForUpdatesButton'), isDev, requestLauncherUpdateCheck)
     }
 }
 
@@ -1520,31 +1640,11 @@ function settingsUpdateButtonStatus(text, disabled = false, handler = null){
  * @param {Object} data The update data.
  */
 function populateSettingsUpdateInformation(data){
-    if(data != null){
-        settingsUpdateTitle.innerHTML = isPrerelease(data.version) ? Lang.queryJS('settings.updates.newPreReleaseTitle') : Lang.queryJS('settings.updates.newReleaseTitle')
-        settingsUpdateChangelogCont.style.display = null
-        settingsUpdateChangelogTitle.innerHTML = data.releaseName
-        settingsUpdateChangelogText.innerHTML = data.releaseNotes
-        populateVersionInformation(data.version, settingsUpdateVersionValue, settingsUpdateVersionTitle, settingsUpdateVersionCheck)
-        
-        if(process.platform === 'darwin'){
-            settingsUpdateButtonStatus(Lang.queryJS('settings.updates.downloadButton'), false, () => {
-                shell.openExternal(data.darwindownload)
-            })
-        } else {
-            settingsUpdateButtonStatus(Lang.queryJS('settings.updates.downloadingButton'), true)
-        }
-    } else {
-        settingsUpdateTitle.innerHTML = Lang.queryJS('settings.updates.latestVersionTitle')
-        settingsUpdateChangelogCont.style.display = 'none'
-        populateVersionInformation(remote.app.getVersion(), settingsUpdateVersionValue, settingsUpdateVersionTitle, settingsUpdateVersionCheck)
-        settingsUpdateButtonStatus(Lang.queryJS('settings.updates.checkForUpdatesButton'), false, () => {
-            if(!isDev){
-                ipcRenderer.send('autoUpdateAction', 'checkForUpdate')
-                settingsUpdateButtonStatus(Lang.queryJS('settings.updates.checkingForUpdatesButton'), true)
-            }
-        })
+    if(data){
+        launcherUpdateState.info = data
+        launcherUpdateState.status = 'available'
     }
+    renderSettingsUpdateState()
 }
 
 /**

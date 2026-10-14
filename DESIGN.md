@@ -62,6 +62,10 @@ Existing account selection and logout remain owned by scripts/settings.js. Offli
 
 The offline control respects reduced motion. Keep existing provider icons and named buttons. No popup, new modal, select, table, or toast system is needed for this feature.
 
+Updater ownership: scripts/uicore.js maintains one renderer update state from main-process IPC; scripts/settings.js renders it in the existing Updates panel with one reserved status line. Available, downloading, ready, installing, latest, checking, and recoverable error states retain the detected version across navigation. Update actions use native buttons and clear previous handlers while busy.
+
+The updater notice in app.ejs is a non-modal status surface anchored at the top right, with native action/dismiss buttons. It reuses the bundled Avenir fonts, white text, gray border, and 3px radius; launcher.css owns its dark translucent surface. It does not move focus, blur the launcher, or block other controls. Availability is announced once per version per renderer session; progress uses real received bytes and percentage. Errors always remain recoverable through Try again, and installation requires an explicit user action. The custom TOML layer owns Portuguese updater copy, with English fallback.
+
 ## Do's and Don'ts
 
 - Keep the existing login controls and navigation destinations.

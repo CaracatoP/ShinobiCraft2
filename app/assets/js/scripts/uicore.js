@@ -37,59 +37,99 @@ webFrame.setVisualZoomLevelLimits(1, 1)
 
 // Initialize auto updates in production environments.
 let updateCheckListener
+const launcherUpdateState = {status: 'idle', info: null, progress: null, error: null}
+const shownUpdateNotices = new Set()
 if(!isDev){
     ipcRenderer.on('autoUpdateNotification', (event, arg, info) => {
-        switch(arg){
-            case 'checking-for-update':
-                loggerAutoUpdater.info('Checking for update..')
-                settingsUpdateButtonStatus(Lang.queryJS('uicore.autoUpdate.checkingForUpdateButton'), true)
-                break
-            case 'update-available':
-                loggerAutoUpdater.info('New update available', info.version)
-                
-                if(process.platform === 'darwin'){
-                    info.darwindownload = `https://github.com/dscalzi/HeliosLauncher/releases/download/v${info.version}/Helios-Launcher-setup-${info.version}${process.arch === 'arm64' ? '-arm64' : '-x64'}.dmg`
-                    showUpdateUI(info)
-                }
-                
-                populateSettingsUpdateInformation(info)
-                break
-            case 'update-downloaded':
-                loggerAutoUpdater.info('Update ' + info.version + ' ready to be installed.')
-                settingsUpdateButtonStatus(Lang.queryJS('uicore.autoUpdate.installNowButton'), false, () => {
-                    if(!isDev){
-                        ipcRenderer.send('autoUpdateAction', 'installUpdateNow')
-                    }
-                })
-                showUpdateUI(info)
-                break
-            case 'update-not-available':
-                loggerAutoUpdater.info('No new update found.')
-                settingsUpdateButtonStatus(Lang.queryJS('uicore.autoUpdate.checkForUpdatesButton'))
-                break
-            case 'ready':
+        handleAutoUpdateNotification(arg, info)
+    })
+}
+
+function handleAutoUpdateNotification(arg, info){
+    switch(arg){
+        case 'checking-for-update':
+            loggerAutoUpdater.info('Checking for update..')
+            launcherUpdateState.status = 'checking'
+            launcherUpdateState.error = null
+            break
+        case 'update-available':
+            loggerAutoUpdater.info('New update available', info && info.version)
+            launcherUpdateState.status = 'available'
+            launcherUpdateState.info = info
+            launcherUpdateState.progress = null
+            launcherUpdateState.error = null
+            showUpdateUI('available')
+            break
+        case 'download-started':
+            launcherUpdateState.status = 'downloading'
+            launcherUpdateState.info = info || launcherUpdateState.info
+            launcherUpdateState.error = null
+            break
+        case 'download-progress':
+            launcherUpdateState.status = 'downloading'
+            launcherUpdateState.progress = info
+            // Accept a version when present; main replays release info before progress.
+            if(info && info.version){
+                launcherUpdateState.info = {...launcherUpdateState.info, version: info.version}
+            }
+            break
+        case 'update-downloaded':
+            loggerAutoUpdater.info('Update ready to be installed.', info && info.version)
+            launcherUpdateState.status = 'downloaded'
+            launcherUpdateState.info = info || launcherUpdateState.info
+            launcherUpdateState.error = null
+            showUpdateUI('downloaded')
+            break
+        case 'update-not-available':
+            loggerAutoUpdater.info('No new update found.')
+            launcherUpdateState.status = 'latest'
+            launcherUpdateState.info = null
+            launcherUpdateState.progress = null
+            launcherUpdateState.error = null
+            hideUpdateNotice()
+            break
+        case 'ready':
+            if(updateCheckListener == null){
                 updateCheckListener = setInterval(() => {
                     ipcRenderer.send('autoUpdateAction', 'checkForUpdate')
                 }, 1800000)
                 ipcRenderer.send('autoUpdateAction', 'checkForUpdate')
-                break
-            case 'realerror':
-                if(info != null && info.code != null){
-                    if(info.code === 'ERR_UPDATER_INVALID_RELEASE_FEED'){
-                        loggerAutoUpdater.info('No suitable releases found.')
-                    } else if(info.code === 'ERR_XML_MISSED_ELEMENT'){
-                        loggerAutoUpdater.info('No releases found.')
-                    } else {
-                        loggerAutoUpdater.error('Error during update check..', info)
-                        loggerAutoUpdater.debug('Error Code:', info.code)
-                    }
-                }
-                break
-            default:
-                loggerAutoUpdater.info('Unknown argument', arg)
-                break
-        }
-    })
+            }
+            return
+        case 'realerror':
+            loggerAutoUpdater.error('Error during update.', info)
+            launcherUpdateState.status = 'error'
+            launcherUpdateState.error = info || {message: 'Unknown updater error'}
+            launcherUpdateState.progress = null
+            showUpdateUI('error')
+            break
+        default:
+            loggerAutoUpdater.info('Unknown argument', arg)
+            return
+    }
+    renderSettingsUpdateState()
+    renderUpdateNotice()
+}
+
+function requestLauncherUpdateCheck(){
+    if(isDev){
+        return
+    }
+    launcherUpdateState.status = 'checking'
+    launcherUpdateState.error = null
+    renderSettingsUpdateState()
+    renderUpdateNotice()
+    ipcRenderer.send('autoUpdateAction', 'checkForUpdate')
+}
+
+function installLauncherUpdate(){
+    if(isDev || launcherUpdateState.status !== 'downloaded'){
+        return
+    }
+    launcherUpdateState.status = 'installing'
+    renderSettingsUpdateState()
+    renderUpdateNotice()
+    ipcRenderer.send('autoUpdateAction', 'installUpdateNow')
 }
 
 /**
@@ -104,26 +144,69 @@ function changeAllowPrerelease(val){
     ipcRenderer.send('autoUpdateAction', 'allowPrereleaseChange', val)
 }
 
-function showUpdateUI(info){
-    //TODO Make this message a bit more informative `${info.version}`
-    document.getElementById('image_seal_container').setAttribute('update', true)
-    document.getElementById('image_seal_container').onclick = () => {
-        /*setOverlayContent('Update Available', 'A new update for the launcher is available. Would you like to install now?', 'Install', 'Later')
-        setOverlayHandler(() => {
-            if(!isDev){
-                ipcRenderer.send('autoUpdateAction', 'installUpdateNow')
-            } else {
-                console.error('Cannot install updates in development environment.')
-                toggleOverlay(false)
+function openLauncherUpdateTab(){
+    hideUpdateNotice()
+    const openTab = () => settingsNavItemListener(document.getElementById('settingsNavUpdate'), false)
+    if(getCurrentView() === VIEWS.settings){
+        openTab()
+    } else {
+        switchView(getCurrentView(), VIEWS.settings, 500, 500, openTab)
+    }
+}
+
+function showUpdateUI(kind){
+    const version = launcherUpdateState.info && launcherUpdateState.info.version
+    if(kind !== 'error'){
+        const key = `launcher-update-notice:${kind}:${version}`
+        try {
+            if(shownUpdateNotices.has(key) || window.sessionStorage.getItem(key)){
+                return
             }
-        })
-        setDismissHandler(() => {
-            toggleOverlay(false)
-        })
-        toggleOverlay(true, true)*/
-        switchView(getCurrentView(), VIEWS.settings, 500, 500, () => {
-            settingsNavItemListener(document.getElementById('settingsNavUpdate'), false)
-        })
+            window.sessionStorage.setItem(key, 'shown')
+        } catch(err){
+            // The in-memory guard still prevents duplicates when storage is unavailable.
+            if(shownUpdateNotices.has(key)){
+                return
+            }
+        }
+        shownUpdateNotices.add(key)
+    }
+    document.getElementById('updaterNotice').hidden = false
+}
+
+function hideUpdateNotice(){
+    document.getElementById('updaterNotice').hidden = true
+}
+
+function renderUpdateNotice(){
+    const notice = document.getElementById('updaterNotice')
+    if(notice.hidden){
+        return
+    }
+    const state = launcherUpdateState
+    const ready = state.status === 'downloaded' || state.status === 'installing'
+    const failed = state.status === 'error'
+    const checking = state.status === 'checking'
+    const version = state.info && state.info.version
+    setUpdateNoticeText('updaterNoticeTitle', Lang.queryJS(`settings.updates.${failed ? 'failedTitle' : checking ? 'checkingForUpdatesButton' : ready ? 'readyTitle' : 'newReleaseTitle'}`))
+    const manual = state.info && state.info.manualDownloadUrl
+    setUpdateNoticeText('updaterNoticeMessage', checking ? Lang.queryJS('settings.updates.retryingMessage') : Lang.queryJS(`uicore.autoUpdate.${failed ? 'failedMessage' : ready ? 'readyMessage' : manual ? 'manualAvailableMessage' : 'availableMessage'}`, {version: version || remote.app.getVersion()}))
+    const percent = settingsUpdateProgressPercent()
+    setUpdateNoticeText('updaterNoticeDetail', `${state.status === 'downloading' && percent != null ? `${percent}% · ` : ''}${settingsUpdateStatusText()}`)
+    const action = document.getElementById('updaterNoticeAction')
+    action.onclick = null
+    action.disabled = state.status === 'installing' || state.status === 'checking'
+    action.textContent = Lang.queryJS(failed ? 'settings.updates.retryButton' : ready ? 'uicore.autoUpdate.installNowButton' : 'uicore.autoUpdate.viewUpdateButton')
+    if(!action.disabled){
+        action.onclick = failed ? requestLauncherUpdateCheck : ready ? installLauncherUpdate : openLauncherUpdateTab
+    }
+    document.getElementById('updaterNoticeDismiss').onclick = hideUpdateNotice
+}
+
+function setUpdateNoticeText(id, text){
+    const element = document.getElementById(id)
+    if(element.textContent !== text){
+        element.textContent = text
     }
 }
 
