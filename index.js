@@ -4,6 +4,8 @@ remoteMain.initialize()
 // Requirements
 const { app, BrowserWindow, ipcMain, Menu, shell } = require('electron')
 const autoUpdater                       = require('electron-updater').autoUpdater
+autoUpdater.autoDownload = true
+autoUpdater.disableDifferentialDownload = true
 const ejse                              = require('ejs-electron')
 const fs                                = require('fs')
 const isDev                             = require('./app/assets/js/isdev')
@@ -19,35 +21,57 @@ LangLoader.setupLanguage()
 // Setup auto updater.
 function initAutoUpdater(event, data) {
 
-    if(data){
+    if (data) {
         autoUpdater.allowPrerelease = true
-    } else {
-        // Defaults to true if application version contains prerelease components (e.g. 0.12.1-alpha.1)
-        // autoUpdater.allowPrerelease = true
     }
-    
-    if(isDev){
+
+    if (isDev) {
         autoUpdater.autoInstallOnAppQuit = false
         autoUpdater.updateConfigPath = path.join(__dirname, 'dev-app-update.yml')
     }
-    if(process.platform === 'darwin'){
+
+    if (process.platform === 'darwin') {
         autoUpdater.autoDownload = false
     }
+
+    autoUpdater.on('download-progress', (progress) => {
+        console.log(
+            `Download: ${progress.percent.toFixed(1)}% ` +
+            `(${(progress.transferred / 1024 / 1024).toFixed(1)} MB / ` +
+            `${(progress.total / 1024 / 1024).toFixed(1)} MB)`
+        )
+
+        event.sender.send(
+            'autoUpdateNotification',
+            'download-progress',
+            progress
+        )
+    })
+
     autoUpdater.on('update-available', (info) => {
         event.sender.send('autoUpdateNotification', 'update-available', info)
     })
+
     autoUpdater.on('update-downloaded', (info) => {
         event.sender.send('autoUpdateNotification', 'update-downloaded', info)
     })
+
     autoUpdater.on('update-not-available', (info) => {
         event.sender.send('autoUpdateNotification', 'update-not-available', info)
     })
+
     autoUpdater.on('checking-for-update', () => {
         event.sender.send('autoUpdateNotification', 'checking-for-update')
     })
+
     autoUpdater.on('error', (err) => {
-        event.sender.send('autoUpdateNotification', 'realerror', err)
-    }) 
+        console.error('AUTO UPDATE ERROR:', err)
+
+        event.sender.send('autoUpdateNotification', 'realerror', {
+            message: err.message,
+            stack: err.stack
+        })
+    })
 }
 
 // Open channel to listen for update actions.
