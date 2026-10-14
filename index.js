@@ -84,7 +84,7 @@ ipcMain.on('autoUpdateAction', (event, arg, data) => {
             }
             break
         case 'installUpdateNow':
-            updaterController.install()
+            autoUpdater.quitAndInstall(true, true)
             break
         default:
             console.log('Unknown argument', arg)
